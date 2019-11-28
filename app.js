@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const GridFsStorage = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
 const methodOverride = require('method-override');
 
 const app = express();
@@ -21,6 +22,15 @@ const conn = mongoose.createConnection(mongoUri,{
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
+
+// Init gfs
+let gfs;
+
+conn.once('open', () => {
+    // Init stream
+    gfs = Grid(conn.db, mongoose.mongo);
+    gfs.collection('uploads');
+})
 
 app.get('/', (req, res) => {
     res.render('index')
