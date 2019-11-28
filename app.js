@@ -103,7 +103,7 @@ app.get('/files/:filename', (req, res) => {
 
 //router get /image/:filename
 //dest Display single file object
-app.get('/files/:filename', (req, res) => {
+app.get('/image/:filename', (req, res) => {
     gfs.files.findOne({
         filename: req.params.filename
     }, (err, file) => {
@@ -112,7 +112,12 @@ app.get('/files/:filename', (req, res) => {
                 err: 'No files exist'
             })
         }
-        return res.json(file)
+        if (file.contentType === 'image/jpeg' || file.contentType === 'img/png'){
+            const readstream = gfs.createReadStream(file.filename)
+            readstream.pipe(res)
+        } else {
+            res.status(404).json({err: 'not image type'})
+        }
     })
 })
 
