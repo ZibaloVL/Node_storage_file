@@ -1,5 +1,5 @@
 const express = require('express');
-const bodyParser = require('body-parser'); 
+const bodyParser = require('body-parser');
 const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
@@ -18,7 +18,7 @@ app.set('view engine', 'ejs');
 // Mongo URI
 const mongoUri = `mongodb+srv://ZibaloVL1971:baracudaZibalo@img-rzvtw.mongodb.net/test`
 // Create mongo connections
-const conn = mongoose.createConnection(mongoUri,{
+const conn = mongoose.createConnection(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
@@ -32,9 +32,89 @@ conn.once('open', () => {
     gfs.collection('uploads');
 })
 
+//Create Storage engine
+
+const storage = new GridFsStorage({
+    url: mongoUri,
+    file: (req, file) => {
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = {
+                    filename: filename,
+                    bucketName: 'uploads'
+                };
+                resolve(fileInfo);
+            });
+        });
+    }
+});
+const upload = multer({
+    storage
+});
+
+// @route GET
+// @dest LOads form
 app.get('/', (req, res) => {
     res.render('index')
 });
+
+//@route POST/upload
+//desc Upload file in DB
+app.post('/upload', upload.single('file'), (req, res) => {
+    //console.log(req)
+    /*  res.json({
+          file: req.file
+      })
+    */
+    res.redirect('/');
+})
+
+//router get /files
+//dest Display all files in JSON
+app.get('/files', (req, res) => {
+    gfs.files.find().toArray((err, files) => {
+        if (!files || files.length === 0) {
+            return res.status(404).json({
+                err: 'No files exist'
+            })
+        }
+        return res.json(files);
+    })
+})
+
+//router get /files/:filename
+//dest Display single file object
+app.get('/files/:filename', (req, res) => {
+    gfs.files.findOne({
+        filename: req.params.filename
+    }, (err, file) => {
+        if (!file || file.length === 0) {
+            return res.status(404).json({
+                err: 'No files exist'
+            })
+        }
+        return res.json(file)
+    })
+})
+
+//router get /image/:filename
+//dest Display single file object
+app.get('/files/:filename', (req, res) => {
+    gfs.files.findOne({
+        filename: req.params.filename
+    }, (err, file) => {
+        if (!file || file.length === 0) {
+            return res.status(404).json({
+                err: 'No files exist'
+            })
+        }
+        return res.json(file)
+    })
+})
 
 const port = 5000;
 
