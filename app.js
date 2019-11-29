@@ -59,7 +59,20 @@ const upload = multer({
 // @route GET
 // @dest LOads form
 app.get('/', (req, res) => {
-    res.render('index')
+    gfs.files.find().toArray((err, files) => {
+        if(!files || files.length === 0) {
+            res.render('index', {files: false});
+        } else {
+            files.map(file => {
+                if(file.contentType === 'image/jpeg' || file.contentType === 'image/png'){
+                    file.isImage = true
+                } else {
+                    file.isImage = false
+                }
+            })
+            res.render('index', {files: files});
+        }
+    })
 });
 
 //@route POST/upload
@@ -119,6 +132,19 @@ app.get('/image/:filename', (req, res) => {
             res.status(404).json({err: 'not image type'})
         }
     })
+})
+
+//@route DELETE /files/:id
+//desc Ddelete file
+app.delete('/files/:id', (req, res) => {
+    console.log('method delete')
+    console.log('req.params.id', req.params.id)
+    gfs.remove({_id: req.params.id, root: 'uploads'}, (err, gridStore) => {
+        if(err) {
+            return res.status(404).json({err: err});
+        }
+    })
+    res.redirect('/')
 })
 
 const port = 5000;
